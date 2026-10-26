@@ -1,0 +1,16 @@
+{
+  "name": "Mazefeed",
+  "short_name": "Mazefeed",
+  "description": "Real-time multiplayer maze-racing game - race your rat to the cheese.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0b0e",
+  "theme_color": "#0b0b0e",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

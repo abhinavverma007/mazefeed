@@ -1,0 +1,387 @@
+.room-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 16px;
+  gap: 16px;
+  align-items: center;
+}
+
+.room-header {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.icon-button {
+  background: transparent;
+  color: var(--color-white);
+  border: var(--border-width) solid var(--color-white);
+  box-shadow: 4px 4px 0 var(--color-white);
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.icon-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--color-white);
+}
+
+.room-code {
+  background: var(--color-bg);
+  color: var(--cheese);
+  font-weight: 900;
+  letter-spacing: 3px;
+  padding: 10px 16px;
+  font-size: 1.1rem;
+}
+
+.copy-hint {
+  font-size: 0.6rem;
+  color: #888;
+  letter-spacing: 1px;
+  margin-left: 6px;
+}
+
+.reconnecting-badge {
+  color: var(--neon-red);
+  font-weight: 900;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.section-title {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  text-align: center;
+}
+
+/* --- Waiting room --- */
+
+.waiting-room {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.player-row.disconnected {
+  opacity: 0.5;
+}
+
+.player-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--color-white);
+  flex-shrink: 0;
+}
+
+.player-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.host-crown {
+  color: var(--cheese);
+}
+
+.ghost-tag {
+  font-size: 0.7rem;
+  color: var(--neon-red);
+  letter-spacing: 0.5px;
+}
+
+.settings-box {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-box label {
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+.settings-box .brutal-button {
+  margin-top: 14px;
+}
+
+.waiting-hint {
+  color: #ccc;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* --- Play screen --- */
+
+.play-screen {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-weight: 900;
+}
+
+.timer {
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer.urgent {
+  color: var(--neon-red);
+  animation: pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.hud-sep {
+  color: #666;
+}
+
+.hud-maze-size {
+  text-transform: uppercase;
+  color: var(--cheese);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+.maze-area {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.maze-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.maze-viewport canvas {
+  border: var(--border-width) solid var(--color-white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--color-white);
+  touch-action: none;
+  max-width: 100%;
+}
+
+.finished-overlay {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 80%;
+  max-width: 320px;
+  height: fit-content;
+  padding: 20px;
+  background: rgba(11, 11, 14, 0.92);
+  text-align: center;
+  font-weight: 900;
+}
+
+.finished-overlay .rank-big {
+  font-size: 2rem;
+  color: var(--cheese);
+  margin: 8px 0;
+}
+
+.status-callout {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  font-weight: 900;
+  font-size: 0.85rem;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.leaderboard {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px;
+}
+
+.leaderboard h3 {
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.leaderboard ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leaderboard li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.leaderboard li.me {
+  color: var(--cheese);
+}
+
+.leaderboard .rank {
+  width: 24px;
+  flex-shrink: 0;
+  color: #888;
+}
+
+.leaderboard .player-name {
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.progress-track {
+  flex: 1;
+  height: 8px;
+  background: #222;
+  border: 2px solid var(--color-white);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.finish-tag {
+  flex-shrink: 0;
+}
+
+.controls-hint {
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+/* --- Results screen --- */
+
+.results-screen {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.results-list li.me {
+  color: var(--cheese);
+}
+
+.results-list .rank {
+  width: 24px;
+  font-weight: 900;
+  color: var(--cheese);
+}
+
+.result-detail {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.results-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.results-actions .brutal-button {
+  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .maze-area {
+    justify-content: center;
+  }
+}

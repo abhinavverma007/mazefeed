@@ -1,0 +1,73 @@
+<div class="home-wrap">
+  <h1 class="title">MAZE<span class="cheese-word">FEED</span></h1>
+  <p class="subtitle">Race through a maze to the cheese. Solo or with friends, live.</p>
+
+  @if (error()) {
+    <div class="error-box brutal-box">{{ error() }}</div>
+  }
+
+  @switch (mode()) {
+    @case ('menu') {
+      <div class="menu-actions">
+        <button class="brutal-button" (click)="showCreate()">Create Room</button>
+        <button class="brutal-button secondary" (click)="showJoin()">Join Room</button>
+        <button class="brutal-button tertiary" [disabled]="busy()" (click)="playSolo()">
+          {{ busy() ? 'Starting…' : 'Play Solo' }}
+        </button>
+      </div>
+    }
+    @case ('create') {
+      <form class="form-box brutal-box" (ngSubmit)="createRoom()">
+        <label for="name">Username</label>
+        <input
+          id="name"
+          class="brutal-input"
+          type="text"
+          maxlength="16"
+          placeholder="Your name"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          name="name"
+        />
+        <div class="form-actions">
+          <button type="button" class="brutal-button secondary" (click)="backToMenu()">Back</button>
+          <button type="submit" class="brutal-button" [disabled]="busy()">
+            {{ busy() ? 'Creating…' : 'Create' }}
+          </button>
+        </div>
+      </form>
+    }
+    @case ('join') {
+      <form class="form-box brutal-box" (ngSubmit)="joinRoom()">
+        <label for="joinName">Username</label>
+        <input
+          id="joinName"
+          class="brutal-input"
+          type="text"
+          maxlength="16"
+          placeholder="Your name"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          name="joinName"
+        />
+        <label for="roomId">Room ID</label>
+        <input
+          id="roomId"
+          class="brutal-input"
+          type="text"
+          maxlength="6"
+          placeholder="ABCDE"
+          [ngModel]="joinRoomId()"
+          (ngModelChange)="joinRoomId.set($event)"
+          name="roomId"
+        />
+        <div class="form-actions">
+          <button type="button" class="brutal-button secondary" (click)="backToMenu()">Back</button>
+          <button type="submit" class="brutal-button" [disabled]="busy()">
+            {{ busy() ? 'Joining…' : 'Join' }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+</div>

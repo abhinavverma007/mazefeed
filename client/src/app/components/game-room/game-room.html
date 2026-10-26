@@ -1,0 +1,200 @@
+<div class="room-wrap">
+  <header class="room-header">
+    <button
+      class="icon-button"
+      (click)="leaveRoom()"
+      [disabled]="playAgainUnlockIn() > 0"
+      aria-label="Leave room"
+    >
+      &larr;
+    </button>
+
+    @if (!isSolo()) {
+      <button class="room-code brutal-box" (click)="copyRoomId()" title="Copy room code">
+        {{ roomId() }} <span class="copy-hint">copy</span>
+      </button>
+    }
+
+    @if (connectionStatus() === 'reconnecting') {
+      <span class="reconnecting-badge">RECONNECTING&hellip;</span>
+    }
+
+    @if (fullscreen.isSupported) {
+      <button class="icon-button" (click)="fullscreen.toggle()" aria-label="Toggle fullscreen">
+        {{ fullscreen.isActive() ? '✕' : '⛶' }}
+      </button>
+    }
+  </header>
+
+  @switch (phase()) {
+    @case ('waiting') {
+      <section class="waiting-room">
+        <h2 class="section-title">Waiting Room</h2>
+
+        <ul class="player-list">
+          @for (player of players(); track player.socketId) {
+            <li
+              class="player-row brutal-box"
+              [class.disconnected]="disconnectedPlayerIds().has(player.socketId)"
+            >
+              <span class="player-dot" [style.background]="player.color"></span>
+              <span class="player-name">{{ player.name }}</span>
+              @if (player.isHost) {
+                <span class="host-crown" title="Host">&#9819;</span>
+              }
+              @if (disconnectedPlayerIds().has(player.socketId)) {
+                <span class="ghost-tag">reconnecting&hellip;</span>
+              }
+            </li>
+          }
+        </ul>
+
+        @if (isHost()) {
+          <div class="settings-box brutal-box">
+            <label for="mazeSize">Maze size</label>
+            <select
+              id="mazeSize"
+              class="brutal-select"
+              [ngModel]="selectedMazeSize()"
+              (ngModelChange)="selectedMazeSize.set($event)"
+              name="mazeSize"
+            >
+              @for (option of mazeSizeOptions; track option.value) {
+                <option [value]="option.value">
+                  {{ option.label }} ({{ option.cols }}&times;{{ option.rows }})
+                </option>
+              }
+            </select>
+
+            <label for="duration">Time limit</label>
+            <select
+              id="duration"
+              class="brutal-select"
+              [ngModel]="selectedDurationSeconds()"
+              (ngModelChange)="selectedDurationSeconds.set($event)"
+              name="duration"
+            >
+              @for (seconds of durationOptions; track seconds) {
+                <option [value]="seconds">{{ seconds }}s</option>
+              }
+            </select>
+
+            <button class="brutal-button" [disabled]="!canStart()" (click)="startGame()">
+              {{
+                isSolo()
+                  ? 'Start Run'
+                  : canStart()
+                    ? 'Start Race'
+                    : 'Need ' + maxPlayers + ' players max, 2 to start'
+              }}
+            </button>
+          </div>
+        } @else {
+          <p class="waiting-hint">Waiting for the host to start the race&hellip;</p>
+        }
+      </section>
+    }
+    @case ('playing') {
+      <section class="play-screen">
+        <div class="hud brutal-box">
+          <span class="timer" [class.urgent]="isTimeUrgent()">{{ timeLeft() }}s</span>
+          <span class="hud-sep">&middot;</span>
+          <span class="hud-maze-size">{{ selectedMazeSize() }}</span>
+        </div>
+
+        <div class="maze-area">
+          <div
+            #mazeViewport
+            class="maze-viewport"
+            (touchstart)="onTouchStart($event)"
+            (touchend)="onTouchEnd($event)"
+          >
+            <canvas #mazeCanvas></canvas>
+
+            @if (amIFinished()) {
+              <div class="finished-overlay brutal-box">
+                <p>YOU FOUND THE CHEESE!</p>
+                <p class="rank-big">{{ myRankLabel() }}</p>
+                <p class="waiting-hint">Waiting for the race to end&hellip;</p>
+              </div>
+            }
+
+            @if (statusCallout(); as callout) {
+              <div class="status-callout" [style.color]="callout.color">{{ callout.text }}</div>
+            }
+          </div>
+
+          <aside class="leaderboard brutal-box">
+            <h3>Progress</h3>
+            <ul>
+              @for (player of leaderboard(); track player.socketId) {
+                <li [class.me]="player.socketId === gameState.mySocketId()">
+                  <span class="rank">#{{ player.rank }}</span>
+                  <span class="player-dot" [style.background]="player.color"></span>
+                  <span class="player-name">{{ player.name }}</span>
+                  <span class="progress-track">
+                    <span
+                      class="progress-fill"
+                      [style.width.%]="player.percent"
+                      [style.background]="player.color"
+                    ></span>
+                  </span>
+                  @if (player.finished) {
+                    <span class="finish-tag">&#127869;</span>
+                  }
+                </li>
+              }
+            </ul>
+          </aside>
+        </div>
+
+        <p class="controls-hint">Swipe or use arrow keys / WASD to move your rat.</p>
+      </section>
+    }
+    @case ('finished') {
+      <section class="results-screen">
+        <h2 class="section-title">
+          {{
+            didIWin()
+              ? 'YOU STOOD 1ST!'
+              : myRankLabel()
+                ? 'YOU STOOD ' + myRankLabel().toUpperCase() + '!'
+                : 'RACE OVER'
+          }}
+        </h2>
+
+        <ol class="results-list">
+          @for (player of leaderboard(); track player.socketId) {
+            <li class="brutal-box" [class.me]="player.socketId === gameState.mySocketId()">
+              <span class="rank">{{ player.rank }}</span>
+              <span class="player-dot" [style.background]="player.color"></span>
+              <span class="player-name">{{ player.name }}</span>
+              <span class="result-detail">
+                @if (player.finished) {
+                  {{ (player.finishTimeMs ?? 0) / 1000 | number: '1.1-1' }}s
+                } @else {
+                  DNF &middot; {{ player.percent }}%
+                }
+              </span>
+            </li>
+          }
+        </ol>
+
+        <div class="results-actions">
+          <button
+            class="brutal-button secondary"
+            [disabled]="playAgainUnlockIn() > 0"
+            (click)="leaveRoom()"
+          >
+            Leave
+          </button>
+          <button class="brutal-button" [disabled]="playAgainUnlockIn() > 0" (click)="playAgain()">
+            {{
+              playAgainUnlockIn() > 0 ? 'Play Again (' + playAgainUnlockIn() + ')' : 'Play Again'
+            }}
+          </button>
+        </div>
+      </section>
+    }
+  }
+</div>
