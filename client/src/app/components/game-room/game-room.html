@@ -107,7 +107,9 @@
             #mazeViewport
             class="maze-viewport"
             (touchstart)="onTouchStart($event)"
-            (touchend)="onTouchEnd($event)"
+            (touchmove)="onTouchMove($event)"
+            (touchend)="onTouchEnd()"
+            (touchcancel)="onTouchEnd()"
           >
             <canvas #mazeCanvas></canvas>
 
@@ -148,7 +150,9 @@
           </aside>
         </div>
 
-        <p class="controls-hint">Swipe or use arrow keys / WASD to move your rat.</p>
+        <p class="controls-hint">
+          Touch and drag to steer your rat, or use arrow keys / WASD.
+        </p>
       </section>
     }
     @case ('finished') {

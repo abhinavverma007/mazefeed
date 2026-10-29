@@ -35,9 +35,14 @@ import { canStep, stepTo } from '../../utils/maze';
 // client-side before they're even sent - a scripted/modified client is also
 // rate-limited server-side (see server/src/index.js#MIN_MOVE_INTERVAL_MS),
 // but a legitimate human mashing keys shouldn't flood the socket either.
-const MIN_MOVE_INTERVAL_MS = 90;
-const STEP_REPEAT_MS = 150;
-const SWIPE_THRESHOLD_PX = 24;
+const MIN_MOVE_INTERVAL_MS = 80;
+const STEP_REPEAT_MS = 120;
+// Touch has no "hold a key" - a finger either is or isn't on the screen - so
+// touch steering is a drag-anchored virtual joystick instead of a swipe: past
+// this many pixels from where the finger first touched down, a direction is
+// "held" (driving the same repeat loop keyboard uses) until the finger drags
+// back inside the deadzone, picks a different direction, or lifts.
+const TOUCH_DEADZONE_PX = 24;
 
 const KEY_DIRECTIONS: Record<string, Direction> = {
   ArrowUp: 'N',
@@ -129,7 +134,8 @@ export class GameRoom implements OnInit, AfterViewInit, OnDestroy {
   private heldDirections: Direction[] = [];
   private moveRepeatInterval?: ReturnType<typeof setInterval>;
   private lastMoveSentAt = 0;
-  private touchStart: { x: number; y: number } | null = null;
+  private touchAnchor: { x: number; y: number } | null = null;
+  private touchDirection: Direction | null = null;
   private resizeObserver?: ResizeObserver;
 
   constructor() {
@@ -259,6 +265,14 @@ export class GameRoom implements OnInit, AfterViewInit, OnDestroy {
     if (!direction || this.phase() !== 'playing') return;
     e.preventDefault();
 
+    // A held key fires native OS-level repeat keydowns (e.repeat === true) on
+    // its own timer, independent of and uncoordinated with the repeat loop
+    // below - acting on both produced two timers racing to call attemptMove,
+    // which beat against each other into an uneven, stuttering step cadence
+    // instead of a steady one. Only a fresh press starts a step; every
+    // repeated step afterward comes from ensureMoveRepeatLoop alone.
+    if (e.repeat) return;
+
     if (!this.heldDirections.includes(direction)) this.heldDirections.push(direction);
     this.attemptMove(direction);
     this.ensureMoveRepeatLoop();
@@ -285,28 +299,54 @@ export class GameRoom implements OnInit, AfterViewInit, OnDestroy {
     this.moveRepeatInterval = undefined;
   }
 
-  // Swipe-to-move on touch devices: each individual swipe gesture is exactly
-  // one grid step, same as a single arrow-key press - there's no persistent
-  // "heading" to hold on touch, since you can't hold a swipe down.
+  // Touch steering: a drag-anchored virtual joystick, not swipe-per-step -
+  // there's no "hold a key" equivalent for a finger, so holding a direction
+  // means holding a drag past the deadzone, and that drives the exact same
+  // held-direction + repeat-loop machinery the keyboard uses (see
+  // ensureMoveRepeatLoop) so both inputs produce the same step cadence.
   onTouchStart(e: TouchEvent) {
+    if (this.phase() !== 'playing') return;
     const t = e.touches[0];
-    this.touchStart = { x: t.clientX, y: t.clientY };
+    this.touchAnchor = { x: t.clientX, y: t.clientY };
   }
 
-  onTouchEnd(e: TouchEvent) {
-    if (!this.touchStart || this.phase() !== 'playing') {
-      this.touchStart = null;
+  onTouchMove(e: TouchEvent) {
+    if (!this.touchAnchor || this.phase() !== 'playing') return;
+    e.preventDefault(); // don't let the drag scroll/refresh the page while steering
+
+    const t = e.touches[0];
+    const dx = t.clientX - this.touchAnchor.x;
+    const dy = t.clientY - this.touchAnchor.y;
+
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < TOUCH_DEADZONE_PX) {
+      this.setTouchDirection(null); // dragged back toward center - pause without lifting
       return;
     }
-    const t = e.changedTouches[0];
-    const dx = t.clientX - this.touchStart.x;
-    const dy = t.clientY - this.touchStart.y;
-    this.touchStart = null;
-
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD_PX) return;
     const direction: Direction =
       Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'E' : 'W') : dy > 0 ? 'S' : 'N';
-    this.attemptMove(direction);
+    this.setTouchDirection(direction);
+  }
+
+  onTouchEnd() {
+    this.touchAnchor = null;
+    this.setTouchDirection(null);
+  }
+
+  private setTouchDirection(direction: Direction | null) {
+    if (this.touchDirection === direction) return;
+
+    if (this.touchDirection) {
+      this.heldDirections = this.heldDirections.filter((d) => d !== this.touchDirection);
+    }
+    this.touchDirection = direction;
+
+    if (direction) {
+      if (!this.heldDirections.includes(direction)) this.heldDirections.push(direction);
+      this.attemptMove(direction); // immediate first step, same as a fresh keydown
+      this.ensureMoveRepeatLoop();
+    } else if (this.heldDirections.length === 0) {
+      this.stopMoveRepeatLoop();
+    }
   }
 
   private attemptMove(direction: Direction) {
