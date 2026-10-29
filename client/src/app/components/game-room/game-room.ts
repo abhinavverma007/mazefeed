@@ -335,6 +335,19 @@ export class GameRoom implements OnInit, AfterViewInit, OnDestroy {
   private setTouchDirection(direction: Direction | null) {
     if (this.touchDirection === direction) return;
 
+    // A real thumb never drags in a perfectly straight line - dx and dy stay
+    // close in magnitude through most of a diagonal-ish drag, so "which axis
+    // is dominant" flips back and forth on nearly every touchmove sample.
+    // Calling attemptMove on every one of those flips (like a fresh keydown)
+    // raced it against the repeat loop below, the same way OS key-repeat did
+    // before the keyboard fix - an out-of-band call on each flip, competing
+    // with the loop's own schedule, produced an uneven cadence instead of a
+    // steady one. Only the very first commit (finger just went from idle to
+    // a direction) gets that immediate step; every direction change after
+    // that is silent - the loop already reads heldDirections fresh on its
+    // own next tick, so it picks up the new direction on schedule instead.
+    const wasMoving = this.touchDirection !== null;
+
     if (this.touchDirection) {
       this.heldDirections = this.heldDirections.filter((d) => d !== this.touchDirection);
     }
@@ -342,7 +355,7 @@ export class GameRoom implements OnInit, AfterViewInit, OnDestroy {
 
     if (direction) {
       if (!this.heldDirections.includes(direction)) this.heldDirections.push(direction);
-      this.attemptMove(direction); // immediate first step, same as a fresh keydown
+      if (!wasMoving) this.attemptMove(direction);
       this.ensureMoveRepeatLoop();
     } else if (this.heldDirections.length === 0) {
       this.stopMoveRepeatLoop();
